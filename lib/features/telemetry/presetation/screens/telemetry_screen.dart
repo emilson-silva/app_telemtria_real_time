@@ -44,8 +44,7 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
       try {
         _mapController!.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lng)));
       } catch (e) {
-        // The GoogleMapController may be invalid if the map was disposed.
-        // Ignore failures to animate in that case.
+        // Handle potential errors gracefully
       }
     }
   }
@@ -118,7 +117,6 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                 ),
               ),
 
-              // Data Section
               Expanded(
                 flex: 1,
                 child: Container(
@@ -137,7 +135,6 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        // Error Message
                         if (errorMessage != null)
                           Container(
                             padding: const EdgeInsets.all(12),
@@ -164,7 +161,6 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
                             ),
                           ),
 
-                        // Data Cards
                         if (currentData != null) ...[
                           _buildDataGrid(context, currentData, isWideScreen),
                         ] else ...[

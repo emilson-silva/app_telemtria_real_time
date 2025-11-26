@@ -23,20 +23,16 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    // Initialize data sources
     final locationDataSource = LocationDataSourceImpl();
     final sensorDataSource = SensorDataSourceImpl();
 
-    // Initialize repository
     final TelemetryRepository telemetryRepository = TelemetryRepositoryImpl(
       locationDataSource: locationDataSource,
       sensorDataSource: sensorDataSource,
     );
 
-    // Initialize use cases
     final startTrackingUseCase = StartTracking(telemetryRepository);
     final stopTrackingUseCase = StopTracking(telemetryRepository);
     final getTelemetryStreamUseCase = GetTelemetryStream(telemetryRepository);
