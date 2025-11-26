@@ -14,6 +14,8 @@ class TelemetryScreen extends StatefulWidget {
 class _TelemetryScreenState extends State<TelemetryScreen> {
   GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
+  double? _lastLat;
+  double? _lastLng;
 
   @override
   void initState() {
@@ -24,6 +26,8 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
   }
 
   void _updateMarker(double lat, double lng) {
+    if (!mounted) return;
+
     setState(() {
       _markers.clear();
       _markers.add(
@@ -36,7 +40,23 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
       );
     });
 
-    _mapController?.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lng)));
+    if (_mapController != null) {
+      try {
+        _mapController!.animateCamera(CameraUpdate.newLatLng(LatLng(lat, lng)));
+      } catch (e) {
+        // The GoogleMapController may be invalid if the map was disposed.
+        // Ignore failures to animate in that case.
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    try {
+      _mapController?.dispose();
+    } catch (_) {}
+    _mapController = null;
+    super.dispose();
   }
 
   @override
@@ -47,7 +67,16 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
     final errorMessage = telemetryProvider.errorMessage;
 
     if (currentData != null) {
-      _updateMarker(currentData.latitude, currentData.longitude);
+      final lat = currentData.latitude;
+      final lng = currentData.longitude;
+      if (_lastLat != lat || _lastLng != lng) {
+        _lastLat = lat;
+        _lastLng = lng;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _updateMarker(lat, lng);
+        });
+      }
     }
 
     return Scaffold(
@@ -71,12 +100,11 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
 
           return Column(
             children: [
-              // Map Section
               Expanded(
                 flex: isWideScreen ? 2 : 1,
                 child: GoogleMap(
                   initialCameraPosition: const CameraPosition(
-                    target: LatLng(-23.550520, -46.633308), // São Paulo
+                    target: LatLng(-23.550520, -46.633308),
                     zoom: 15,
                   ),
                   markers: _markers,
@@ -243,19 +271,19 @@ class _TelemetryScreenState extends State<TelemetryScreen> {
       },
       {
         'title': 'Aceleração X',
-        'value': '${currentData.accelerationX.toStringAsFixed(2)} m/s²',
+        'value': '${currentData.accelerometerX.toStringAsFixed(2)} m/s²',
         'icon': Icons.swap_horiz,
         'color': Colors.orange[600]!,
       },
       {
         'title': 'Aceleração Y',
-        'value': '${currentData.accelerationY.toStringAsFixed(2)} m/s²',
+        'value': '${currentData.accelerometerY.toStringAsFixed(2)} m/s²',
         'icon': Icons.swap_vert,
         'color': Colors.green[600]!,
       },
       {
         'title': 'Aceleração Z',
-        'value': '${currentData.accelerationZ.toStringAsFixed(2)} m/s²',
+        'value': '${currentData.accelerometerZ.toStringAsFixed(2)} m/s²',
         'icon': Icons.height,
         'color': Colors.red[600]!,
       },
