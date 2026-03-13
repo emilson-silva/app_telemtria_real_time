@@ -1,3 +1,4 @@
+// ignore: dangling_library_doc_comments
 /// ═══════════════════════════════════════════════════════════════════════════
 /// DATA LAYER - DATA SOURCE (Fonte de Dados)
 /// ═══════════════════════════════════════════════════════════════════════════
@@ -15,6 +16,7 @@
 /// ═══════════════════════════════════════════════════════════════════════════
 
 import 'dart:async';
+import 'dart:io';
 import 'package:geolocator/geolocator.dart';
 
 /// Interface abstrata para fonte de dados de localização GPS
@@ -72,14 +74,42 @@ class LocationDataSourceImpl implements LocationDataSource {
   }
 
   @override
-  Stream<Position> getLocationStream() {
-    // Configurações do GPS
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 1,
-    );
+  Stream<Position> getLocationStream() async* {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception(
+        'Serviço de localização desativado. Ative o GPS do aparelho.',
+      );
+    }
 
-    return Geolocator.getPositionStream(locationSettings: locationSettings);
+    final LocationSettings locationSettings;
+
+    if (Platform.isAndroid) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 1,
+        intervalDuration: const Duration(seconds: 2),
+      );
+    } else if (Platform.isIOS || Platform.isMacOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        activityType: ActivityType.fitness,
+        distanceFilter: 1,
+        pauseLocationUpdatesAutomatically: false,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 1,
+      );
+    }
+
+    final firstPosition = await Geolocator.getCurrentPosition(
+      locationSettings: locationSettings,
+    );
+    yield firstPosition;
+
+    yield* Geolocator.getPositionStream(locationSettings: locationSettings);
   }
 
   void dispose() {

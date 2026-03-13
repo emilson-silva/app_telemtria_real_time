@@ -43,6 +43,7 @@ class TelemetryRepositoryImpl implements TelemetryRepository {
       },
       onError: (error) {
         print('❌ Erro no GPS: $error');
+        _telemetryController.addError(error);
       },
     );
 
